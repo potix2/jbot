@@ -1,0 +1,16 @@
+.idea/
+out/
+*.iml
+
+
+#Backup Files
+*~
+*.swp
+
+#Package Files
+*.jar
+*.war
+*.ear
+
+#others
+.DS_Store
