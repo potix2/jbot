@@ -60,10 +60,23 @@ public class IRCClientTest {
                 + "USER javadocbot 8 * :javadocbot\n"
                 + "NICK javadocbot\n"
                 + "JOIN #potix2-test\n"
-//                + "PRIVMSG #potix2-test :String concat(String str) 指定された文字列をこの文字列の最後に連結します。\n"
-//                + "PRIVMSG #potix2-test :http://java.sun.com/j2se/1.5.0/ja/docs/ja/api/java/lang/String.html\n"
                 + "PART #potix2-test\n"
                 + "QUIT\n";
+        assertEquals(expected, getResultString());
+    }
+
+    @Test
+    public void pingTest() throws IOException {
+        ByteArrayInputStream iStream = new ByteArrayInputStream("PING hoge.freenode.net".getBytes());
+        ircClient.setInputStream(iStream);
+        ircClient.run();
+        iStream.close();
+
+        String expected =  ""
+                + "USER javadocbot 8 * :javadocbot\n"
+                + "NICK javadocbot\n"
+                + "JOIN #potix2-test\n"
+                + "PONG hoge.freenode.net\n";
         assertEquals(expected, getResultString());
     }
 
@@ -78,5 +91,13 @@ public class IRCClientTest {
         String receivedText = ":potix2!xxx.yyy.ne.jp PRIVMSG #potix2-test :@javadocbot bye";
         IRCServerMessage message = IRCClient.parseMessage(receivedText);
         assertEquals("bye", message.getType());
+    }
+
+    @Test
+    public void scanPingCommandTest() {
+        String receivedText = "PING hoge.freenode.irc";
+        IRCServerMessage message = IRCClient.parseMessage(receivedText);
+        assertEquals("ping", message.getType());
+        assertEquals("hoge.freenode.irc", message.getParams());
     }
 }

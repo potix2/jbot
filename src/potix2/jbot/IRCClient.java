@@ -30,15 +30,33 @@ public class IRCClient {
 
     public void run() throws IOException {
         this.login();
-//        writer.write("PRIVMSG " + this.channel + " :String concat(String str) 指定された文字列をこの文字列の最後に連結します。\n");
-//        writer.write("PRIVMSG " + this.channel + " :http://java.sun.com/j2se/1.5.0/ja/docs/ja/api/java/lang/String.html\n");
-        this.onBye();
+
+        String line;
+        while((line = this.reader.readLine()) != null ) {
+            IRCServerMessage message = parseMessage(line);
+            if ( message == null ) {
+                continue;
+            }
+
+            if ( message.getType().equals("bye") ) {
+                this.onBye();
+                break;
+            }
+            else if ( message.getType().equals("ping") ) {
+                this.onPing(message.getParams());
+            }
+        }
+    }
+
+    private void onPing(String server) {
+        writer.write("PONG " + server + "\n");
         writer.flush();
     }
 
     protected void onBye() {
         writer.write("PART " + this.channel + "\n");
         writer.write("QUIT\n");
+        writer.flush();
     }
 
     public static String makeCommand(String commandName, String params) {
@@ -46,6 +64,31 @@ public class IRCClient {
     }
 
     public static IRCServerMessage parseMessage(String receivedText) {
-        return new IRCServerMessage("bye");
+        //:potix2!xxx.yyy.ne.jp PRIVMSG #potix2-test :@javadocbot bye
+        String[] tokens = receivedText.split(" ");
+        if ( tokens == null || tokens.length == 0 ) {
+            return null;
+        }
+
+        int currentIndex = 0;
+        if ( tokens[0].startsWith(":") ) {
+            currentIndex = 1;
+        }
+
+        String command = tokens[currentIndex++].toUpperCase();
+        if ( command.equals("PRIVMSG") ) {
+            return new IRCServerMessage("bye");
+        }
+        else if ( command.equals("PING") ) {
+            if ( tokens.length > currentIndex ) {
+                return new IRCServerMessage("ping", tokens[currentIndex]);
+            }
+            else {
+                return null;
+            }
+        }
+        else {
+            return null;
+        }
     }
 }
